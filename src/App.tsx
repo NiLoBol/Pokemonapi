@@ -11,7 +11,7 @@ function App() {
   return (
     <ContextProvider >
       <Router>
-        <Navbar></Navbar>
+        {/* <Navbar></Navbar> */}
         <Routes>
           <Route path="/" element={<Home />}></Route>
           <Route path="/mix" element={<Mixmig />}></Route>

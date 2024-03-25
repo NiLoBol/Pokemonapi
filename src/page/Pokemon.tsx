@@ -16,11 +16,15 @@ export default function Pokemon() {
   const [Pokelist, setPokelist] = useState<Evo>();
   const dateContext = useContext(DateContext);
   const device = dateContext?.device;
+  const [EVOlist, setEvo] = useState<Evo>();
+  const [backpokemon, setbackpokemon] = useState<number>();
+  const [nextpokemon, setnextpokemon] = useState<number>();
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
         if (!response.ok) {
+          window.location.href = "/";
           throw new Error("Network response was not ok");
         }
         const jsonData = await response.json();
@@ -69,6 +73,7 @@ export default function Pokemon() {
     fetchData();
   }, []);
 
+  /// EVO ต้องมาเมื่อมีละไม่มามาเมื่อไม่มี
   // const [PokemonEvo,setEvo] =useState<any>();
   let Evolist: Evo = [];
   useEffect(() => {
@@ -90,66 +95,125 @@ export default function Pokemon() {
     getEvotion(sp, 1);
   }, [sp]);
 
-  if (pokemon) {
-    // console.log(pokemon);
-    console.log(device);
+  function organizeData(data: Evo): any[] {
+    const result: any[] = [];
+    data.forEach((item) => {
+      if (!result[item.index]) {
+        result[item.index] = [];
+      }
+      result[item.index].push({ name: item.name, id: item.id });
+    });
+    return result.filter(Boolean);
+  }
 
+  // console.log(Pokelist);
+
+  useEffect(() => {
+    if (Pokelist) {
+      console.log(Pokelist);
+      Pokelist.forEach((element) => {
+        const ID = dateContext?.pokemonlist.results
+          .filter((item: any) => {
+            return item.name === element.name;
+          })[0]
+          .url.split("/");
+        element.id = ID[ID.length - 2];
+      });
+
+      const output = organizeData(Pokelist);
+      setEvo(output);
+      console.log(output);
+    }
+  }, [Pokelist]);
+
+  useEffect(() => {
+    if (pokemon && dateContext?.pokemonlist) {
+      console.log(pokemon);
+      console.log(device);
+      const iddata = dateContext?.pokemonlist?.results.findIndex(
+        (e: { name: string; url: string }) => e.name === pokemon.name
+      );
+      console.log(iddata);
+      if (iddata !== -1) {
+        // Ensure iddata is valid
+        let nextpokemon =
+          dateContext?.pokemonlist?.results[iddata + 1]?.url.split("/");
+
+        setnextpokemon(
+          nextpokemon ? nextpokemon[nextpokemon.length - 2] : null
+        );
+        let backpokemon =
+          dateContext?.pokemonlist?.results[
+            (iddata > 0 ? iddata : 1) - 1
+          ]?.url.split("/");
+        setbackpokemon(
+          backpokemon ? backpokemon[backpokemon.length - 2] : null
+        );
+      }
+    }
+  }, [pokemon, dateContext?.pokemonlist]);
+  if (pokemon && dateContext?.pokemonlist) {
     return (
-      <div className="max-h-screen  ">
-        <div
-          className={`w-full lg:h-[60vw] h-screen bg-${pokemon.types[0].type.name} absolute top-0 lg:top-1/2 -z-10 lg:rounded-t-[40%] `}
-        ></div>
-        <div className="w-screen hidden h-20 flex flex-row justify-evenly bg-black">
-          <a
-            className={`basis-1/4 ${
-              id !== undefined && parseInt(id) - 1 == 0
-                ? ""
-                : "bg-white text-5xl font-extrabold text-center disabled m-3 "
-            }`}
-            href={
-              id !== undefined && parseInt(id) - 1 == 0
-                ? ""
-                : `/Pokemon/${id !== undefined ? parseInt(id) - 1 : null}`
-            }
-          >
-            {id !== undefined ? parseInt(id) - 1 : null}
-          </a>
+      <div className={"max-h-screen  mt-10"}>
+        {Pokelist ? (
+          <div
+            className={`w-full lg:h-[60vw] h-screen bg-${pokemon.types[0].type.name} absolute top-0 lg:top-1/3 -z-10 lg:rounded-t-[40%] `}
+          ></div>
+        ) : (
+          <div
+            className={`w-full lg:h-[31.65vw]  h-screen bg-${pokemon.types[0].type.name} absolute top-0 lg:top-1/3 -z-10 lg:rounded-t-[40%] `}
+          ></div>
+        )}
 
-          <a
-            className="basis-1/4 bg-white text-5xl font-extrabold text-center m-3"
-            href={id !== undefined ? `/Pokemon/${parseInt(id) + 1}` : ""}
-          >
-            {id !== undefined ? parseInt(id) + 1 : null}
-          </a>
-        </div>
 
         <div
           className={
             device == "desktop"
-              ? " flex flex-row flex-wrap justify-evenly py-10 "
-              : " flex flex-row  flex-wrap  py-10 bg-" +
-                pokemon.types[0].type.name
+              ? " flex flex-row flex-wrap justify-evenly "
+              : " flex flex-row  flex-wrap  bg-" + pokemon.types[0].type.name
           }
         >
-           {device !== "mobile"? (
-            <div className="basis-1/12 relative top-[330px]">TEST</div>
-          ) : <div className="basis-1/12 relative top-[160px]">TEST</div>}
+          {device !== "mobile" && id !== "1" && id !== undefined ? (
+            <a
+              href={"/Pokemon/" + backpokemon}
+              className="basis-1/12 relative top-[330px] h-20"
+            >
+              <i className="fa-solid fa-2xl fa-arrow-left"></i>
+            </a>
+          ) : id === "1" ? (
+            <a className="basis-1/12 relative top-[330px] h-20 "></a>
+          ) : (
+            <a
+              href={"/Pokemon/" + backpokemon}
+              className="basis-1/12 relative top-[160px]"
+            >
+              <i className="fa-solid fa-2xl fa-arrow-left"></i>
+            </a>
+          )}
           <div
             id="pokemon-img"
-            className={"lg:basis-4/12 basis-9/12 lg:h-1/4 border-[3px] lg:mx-0 mx-auto   p-20  border-"+pokemon.types[0].type.name+ " bg-white rounded-full text-center overflow-hidden"}
+            className={
+              "lg:basis-4/12 basis-9/12 lg:h-1/4 border-[3px] lg:mx-0 mx-auto   p-20  border-" +
+              pokemon.types[0].type.name +
+              " bg-white rounded-full text-center overflow-hidden"
+            }
           >
             <div>
               <img src={pokemon.sprites.other.home.front_default} alt="" />
             </div>
           </div>
-          {device == "mobile" ? (
-            <div className="basis-1/12 relative top-[160px]">TEST</div>
+          {device == "mobile" && id !== undefined ? (
+            <a
+              href={"/Pokemon/" + nextpokemon}
+              className={"basis-1/12 relative top-[160px] "}
+            >
+              <i className="fa-solid fa-2xl fa-arrow-right"></i>
+            </a>
           ) : null}
           <div
             className={`lg:basis-4/12 basis-full  p-10 border-[3px] rounded-2xl border-${pokemon.types[0].type.name} bg-white  `}
           >
-            <h1 className="text-6xl font-bold "> {pokemon.name}</h1>
-
+            <h1 className="text-6xl font-bold mb-10"> {pokemon.name}</h1>
             <div>
               {pokemon.stats.map(
                 (item: {
@@ -172,6 +236,20 @@ export default function Pokemon() {
                   );
                 }
               )}
+            </div>
+            <div className="flex flex-wrap flex-row my-10">
+              <div className="basis-1/2 flex flex-row">
+                <i className="fa-solid fa-arrows-up-down text-5xl me-10"></i>
+                <div className="my-3">
+                  {(pokemon.height * 0.1).toFixed(2)} M
+                </div>
+              </div>
+              <div className="basis-1/2 flex flex-row">
+                <i className="fa-solid fa-weight-scale text-5xl me-10"></i>
+                <div className="my-3">
+                  {(pokemon.weight * 0.1).toFixed(2)} KG
+                </div>
+              </div>
             </div>
             <div className="flex flex-row flex-wrap justify-evenly">
               {pokemon.types.map((item: pokemonTypeInterface) => {
@@ -230,10 +308,18 @@ export default function Pokemon() {
             </div>
           </div>
           {device == "desktop" ? (
-            <div className="basis-1/12 relative top-[330px]">TEST</div>
+            <a
+              href={"/Pokemon/" + nextpokemon}
+              className={"basis-1/12 relative top-[330px] h-20 "}
+            >
+              <i className="fa-solid fa-2xl fa-arrow-right"></i>
+            </a>
           ) : null}
-          <PokemonEVO data={Pokelist ? Pokelist : undefined}></PokemonEVO>
         </div>
+        <PokemonEVO
+          data={EVOlist ? EVOlist : undefined}
+          bg={"bg-" + pokemon.types[0].type.name}
+        ></PokemonEVO>
       </div>
     );
   } else {
